@@ -1,6 +1,7 @@
 insert into term (term_id, tyear, semester, add_date, add_deadline, drop_deadline, start_date, end_date) values
 (9, 2025, 'Spring', '2024-11-01', '2025-04-30', '2025-04-30', '2025-01-15', '2025-05-17'),
-(10, 2025, 'Fall',  '2025-04-01', '2025-09-30', '2025-09-30', '2025-08-20', '2025-12-17');
+(10, 2025, 'Fall',  '2025-04-01', '2025-09-30', '2025-09-30', '2025-08-20', '2025-12-17'),
+(11, 2026, 'Spring', '2025-11-01', '2026-04-30', '2026-04-30', '2026-01-15', '2026-05-17');
 
 insert into user_table (id, name, email, password, type) values
 (1, 'admin', 'admin@csumb.edu', '$2a$10$8cjz47bjbR4Mn8GMg9IZx.vyjhLXR/SKKMSZ9.mP9vpMu0ssKi8GW' , 'ADMIN'),
@@ -16,7 +17,7 @@ insert into course values
 ('cst499', 'Capstone', 4);
 
 insert into section (section_no, course_id, section_id, term_id, building, room, times, instructor_email) values
-(1, 'cst489', 1, 10, '90', 'B104', 'W F 10-11', 'ted@csumb.edu');
+(1, 'cst489', 1, 11, '90', 'B104', 'W F 10-11', 'ted@csumb.edu');
 
 
 

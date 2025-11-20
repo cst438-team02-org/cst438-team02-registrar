@@ -16,8 +16,9 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.security.Principal;
+import java.sql.Date;
+import java.time.LocalDate;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.List;
 
 @RestController
@@ -40,21 +41,71 @@ public class StudentScheduleController {
         this.gradebook = gradebook;
     }
 
-
+    // student enrolls in a course
     @PostMapping("/enrollments/sections/{sectionNo}")
     @PreAuthorize("hasAuthority('SCOPE_ROLE_STUDENT')")
-    public EnrollmentDTO addCourse(
-            @PathVariable int sectionNo,
-            Principal principal ) throws Exception  {
+    public EnrollmentDTO addCourse(@PathVariable int sectionNo, Principal principal ) throws Exception  {
 
-        // create and save an EnrollmentEntity
-        //  relate enrollment to the student's User entity and to the Section entity
-        //  check that student is not already enrolled in the section
-        //  check that the current date is not before addDate, not after addDeadline
-		//  of the section's term.  Return an EnrollmentDTO with the id of the 
-		//  Enrollment and other fields.
-		
-		return null;
+        User u = userRepository.findByEmail(principal.getName());
+
+        Section s = sectionRepository.findById(sectionNo).orElse(null);
+        if (s == null) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "invalid section id");
+        }
+
+        Term t = s.getTerm();
+        if (t == null) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "invalid term");
+        }
+
+        // check that student is not already enrolled in the section
+        Enrollment e = enrollmentRepository.findEnrollmentBySectionNoAndStudentId(sectionNo, u.getId());
+        if (e != null) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "student already enrolled in course");
+        }
+
+        // check that the current date is not before addDate, not after addDeadline
+        // of the section's term.
+        if (Date.valueOf(LocalDate.now()).before(t.getAddDate())) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "course not accepting enrollments yet");
+        } else if (Date.valueOf(LocalDate.now()).after(t.getAddDeadline())) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "add deadline passed");
+        }
+
+        // create and save an Enrollment Entity
+        // relate enrollment to the student's User entity and to the Section entity
+        e = new Enrollment();
+        e.setSection(s);
+        e.setStudent(u);
+        enrollmentRepository.save(e);
+
+        // create an EnrollmentDTO with the id of the
+        // Enrollment and other fields.
+        EnrollmentDTO eDTO = new EnrollmentDTO(
+                e.getEnrollmentId(),
+                null,
+                u.getId(),
+                u.getName(),
+                u.getEmail(),
+                s.getCourse().getCourseId(),
+                s.getCourse().getTitle(),
+                s.getSectionId(),
+                s.getSectionNo(),
+                s.getBuilding(),
+                s.getRoom(),
+                s.getTimes(),
+                s.getCourse().getCredits(),
+                s.getTerm().getYear(),
+                s.getTerm().getSemester()
+
+        );
+
+        // send a message to the gradebook service
+        gradebook.sendMessage("addEnrollment", eDTO);
+
+        // Return an EnrollmentDTO with the id of the
+		// Enrollment and other fields.
+        return eDTO;
     }
 
     // student drops a course
@@ -65,6 +116,7 @@ public class StudentScheduleController {
         // check that enrollment belongs to the logged in student
 		// and that today is not after the dropDeadLine for the term.
 
+        //gradebook.sendMessage("dropCourse", enrollmentId);
     }
 
 }

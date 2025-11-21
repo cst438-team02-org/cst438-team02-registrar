@@ -66,16 +66,38 @@ public class StudentController {
        }).toList();
    }
 
-   // return transcript for student
+    // return transcript for student
     @GetMapping("/transcripts")
     @PreAuthorize("hasAuthority('SCOPE_ROLE_STUDENT')")
     public List<EnrollmentDTO> getTranscript(Principal principal) {
 
+        User u = userRepository.findByEmail(principal.getName());
+
         // use the EnrollmentController findEnrollmentsByStudentIdOrderByTermId
-		// method to retrive the enrollments given the id 
+		// method to retrieve the enrollments given the id
 		// of the logged in student.
 		// Return a list of EnrollmentDTO.
-		
-        return null;
+        return enrollmentRepository.findEnrollmentsByStudentIdOrderByTermId(u.getId()).stream().map( e -> {
+            Section s = e.getSection();
+            Course c = s.getCourse();
+            Term t = s.getTerm();
+            return new EnrollmentDTO(
+                    e.getEnrollmentId(),
+                    e.getGrade(),
+                    u.getId(),
+                    u.getName(),
+                    u.getEmail(),
+                    c.getCourseId(),
+                    c.getTitle(),
+                    s.getSectionId(),
+                    s.getSectionNo(),
+                    s.getBuilding(),
+                    s.getRoom(),
+                    s.getTimes(),
+                    c.getCredits(),
+                    t.getYear(),
+                    t.getSemester()
+            );
+        }).toList();
     }
 }

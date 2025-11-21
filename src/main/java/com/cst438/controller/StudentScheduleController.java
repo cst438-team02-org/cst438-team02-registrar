@@ -48,11 +48,13 @@ public class StudentScheduleController {
 
         User u = userRepository.findByEmail(principal.getName());
 
+        // check that the section entity exists in the database
         Section s = sectionRepository.findById(sectionNo).orElse(null);
         if (s == null) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "invalid section id");
         }
 
+        // check that the term entity exists in the database
         Term t = s.getTerm();
         if (t == null) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "invalid term");
@@ -97,7 +99,6 @@ public class StudentScheduleController {
                 s.getCourse().getCredits(),
                 s.getTerm().getYear(),
                 s.getTerm().getSemester()
-
         );
 
         // send a message to the gradebook service
@@ -113,10 +114,40 @@ public class StudentScheduleController {
     @PreAuthorize("hasAuthority('SCOPE_ROLE_STUDENT')")
     public void dropCourse(@PathVariable("enrollmentId") int enrollmentId, Principal principal) throws Exception {
 
-        // check that enrollment belongs to the logged in student
-		// and that today is not after the dropDeadLine for the term.
+        // check that the enrollment entity exists in the database
+        Enrollment e = enrollmentRepository.findById(enrollmentId).orElse(null);
+        if (e == null) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "enrollment not found");
+        }
 
-        //gradebook.sendMessage("dropCourse", enrollmentId);
+        // check that the section entity exists in the database
+        Section s = e.getSection();
+        if (s == null) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "invalid section");
+        }
+
+        // check that the term entity exists in the database
+        Term t = s.getTerm();
+        if (t == null) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "invalid term");
+        }
+
+        // check that enrollment belongs to the logged in student
+        User u = userRepository.findByEmail(principal.getName());
+
+        e = enrollmentRepository.findEnrollmentBySectionNoAndStudentId(s.getSectionNo(), u.getId());
+        if (e == null) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "student not enrolled in course");
+        }
+
+		// check that today is not after the dropDeadLine for the term.
+        if (Date.valueOf(LocalDate.now()).after(t.getDropDeadline())) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "drop deadline passed");
+        }
+
+        enrollmentRepository.deleteById(enrollmentId);
+
+        gradebook.sendMessage("deleteEnrollment", enrollmentId);
     }
 
 }

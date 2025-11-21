@@ -17,14 +17,16 @@ public class StudentController {
 
    private final EnrollmentRepository enrollmentRepository;
    private final UserRepository userRepository;
+    private final SectionRepository sectionRepository;
 
-   public StudentController(
+    public StudentController(
            EnrollmentRepository enrollmentRepository,
-           UserRepository userRepository
-   ) {
+           UserRepository userRepository,
+           SectionRepository sectionRepository) {
        this.enrollmentRepository = enrollmentRepository;
        this.userRepository = userRepository;
-   }
+        this.sectionRepository = sectionRepository;
+    }
 
    // retrieve schedule for student for a term
    @GetMapping("/enrollments")
@@ -33,13 +35,35 @@ public class StudentController {
            @RequestParam("year") int year,
            @RequestParam("semester") String semester,
            Principal principal) {
-			   
-		// use the EnrollmentController findByYearAndSemsterOrderByCourseId
-		// method to retrive the enrollments given the year, semester and id 
-		// of the logged in student.
-		// Return a list of EnrollmentDTO.
 
-      return null;
+       User u = userRepository.findByEmail(principal.getName());
+
+       // use the EnrollmentController findByYearAndSemesterOrderByCourseId
+       // method to retrieve the enrollments given the year, semester and id
+       // of the logged in student.
+       // Return a list of EnrollmentDTO.
+       return enrollmentRepository.findByYearAndSemesterOrderByCourseId(year, semester, u.getId()).stream().map( e -> {
+           Section s = e.getSection();
+           Course c = s.getCourse();
+           Term t = s.getTerm();
+           return new EnrollmentDTO(
+                   e.getEnrollmentId(),
+                   e.getGrade(),
+                   u.getId(),
+                   u.getName(),
+                   u.getEmail(),
+                   c.getCourseId(),
+                   c.getTitle(),
+                   s.getSectionId(),
+                   s.getSectionNo(),
+                   s.getBuilding(),
+                   s.getRoom(),
+                   s.getTimes(),
+                   c.getCredits(),
+                   t.getYear(),
+                   t.getSemester()
+           );
+       }).toList();
    }
 
    // return transcript for student

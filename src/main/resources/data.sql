@@ -21,7 +21,3 @@ insert into section (section_no, course_id, section_id, term_id, building, room,
 (1, 'cst489', 1, 11, '90', 'B104', 'W F 10-11', 'ted@csumb.edu'),
 (2, 'cst489', 1, 9, '90', 'B104', 'W F 10-11', 'ted@csumb.edu'),
 (3, 'cst489', 1, 12, '90', 'B104', 'W F 10-11', 'ted@csumb.edu');
-
-
-
-

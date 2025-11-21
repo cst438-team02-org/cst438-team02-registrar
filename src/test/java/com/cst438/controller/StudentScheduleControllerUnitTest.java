@@ -41,17 +41,7 @@ public class StudentScheduleControllerUnitTest {
         String studentEmail = "sam@csumb.edu";
         String password = "sam2025";
 
-        // login user in GET request with email and password authentication
-        EntityExchangeResult<LoginDTO> login_dto =  client.get().uri("/login")
-                .headers(headers -> headers.setBasicAuth(studentEmail, password))
-                .accept(MediaType.APPLICATION_JSON)
-                .exchange()
-                .expectStatus().isOk()
-                .expectBody(LoginDTO.class).returnResult();
-
-        // get bearer token
-        String jwt = login_dto.getResponseBody().jwt();
-        assertNotNull(jwt);
+        String jwt = loginUser(studentEmail, password);
 
         int sectionNo = 1; // default section already in database
 
@@ -72,7 +62,6 @@ public class StudentScheduleControllerUnitTest {
         // check that the new Enrollment exists in the database
         int userId = actualEnrollment.studentId();
         Enrollment e = enrollmentRepository.findEnrollmentBySectionNoAndStudentId(sectionNo, userId);
-
         assertNotNull(e, "enrollment created was ok but enrollment is not in database");
         assertNull(e.getGrade(), "enrollment created was ok but grade should be null");
 
@@ -94,11 +83,89 @@ public class StudentScheduleControllerUnitTest {
 
     @Test
     public void createStudentScheduleAlreadyEnrolled() throws Exception {
+        /* Student Login */
+        String studentEmail = "sam@csumb.edu";
+        String password = "sam2025";
 
+        String jwt = loginUser(studentEmail, password);
+
+        int sectionNo = 1; // default section already in database
+
+        /* Add Course to Student's Schedule */
+        // add a course to the student's schedule in POST request with sectionNo as path var
+        EntityExchangeResult<EnrollmentDTO> enrollmentResponse =  client.post().uri("/enrollments/sections/"+sectionNo)
+                .headers(headers -> headers.setBearerAuth(jwt))
+                .accept(MediaType.APPLICATION_JSON)
+                .exchange()
+                .expectStatus().isOk()
+                .expectBody(EnrollmentDTO.class).returnResult();
+        EnrollmentDTO actualEnrollment = enrollmentResponse.getResponseBody();
+        assertTrue(actualEnrollment.enrollmentId()>0, "primary key is invalid");
+
+        // check that the sendMessage from registrar to gradebook was called as expected
+        verify(gradebookService, times(1)).sendMessage(eq("addEnrollment"), any());
+
+        // check that the new Enrollment exists in the database
+        int userId = actualEnrollment.studentId();
+        Enrollment e = enrollmentRepository.findEnrollmentBySectionNoAndStudentId(sectionNo, userId);
+        assertNotNull(e, "enrollment created was ok but enrollment is not in database");
+        assertNull(e.getGrade(), "enrollment created was ok but grade should be null");
+
+        /* Attempt to Re-add Course to Student's Schedule */
+        // add a course to the student's schedule in POST request with sectionNo as path var
+        client.post().uri("/enrollments/sections/"+sectionNo)
+                .headers(headers -> headers.setBearerAuth(jwt))
+                .accept(MediaType.APPLICATION_JSON)
+                .exchange()
+                .expectStatus().isBadRequest()
+                .expectBody()
+                .jsonPath("$.errors[?(@=='student already enrolled in course')]").exists();
+
+        clearEnrollment(jwt, e.getEnrollmentId(), sectionNo, userId);
     }
 
     @Test
     public void deleteStudentScheduleNotEnrolled() throws Exception {
 
+    }
+
+    @Test
+    public void createStudentScheduleInvalidDate() throws Exception {
+
+    }
+
+    @Test
+    public void createStudentScheduleInvalidTermOrSection() throws Exception {
+
+    }
+
+    private String loginUser(String email, String password) {
+        // login user in GET request with email and password authentication
+        EntityExchangeResult<LoginDTO> login_dto =  client.get().uri("/login")
+                .headers(headers -> headers.setBasicAuth(email, password))
+                .accept(MediaType.APPLICATION_JSON)
+                .exchange()
+                .expectStatus().isOk()
+                .expectBody(LoginDTO.class).returnResult();
+
+        // get bearer token
+        String jwt = login_dto.getResponseBody().jwt();
+        assertNotNull(jwt);
+        return jwt;
+    }
+
+    private void clearEnrollment(String jwt, int enrollmentId, int sectionNo, int userId) {
+        // drop a course from the student's schedule in DELETE request with enrollmentId as path var
+        client.delete().uri("/enrollments/"+enrollmentId)
+                .headers(headers -> headers.setBearerAuth(jwt))
+                .exchange()
+                .expectStatus().isOk();
+
+        // check that the student's enrollment no longer exists in the database
+        Enrollment e = enrollmentRepository.findEnrollmentBySectionNoAndStudentId(sectionNo, userId);
+        assertNull(e, "enrollment was not deleted from database");
+
+        // check that the sendMessage to gradebook service was called as expected
+        verify(gradebookService, times(1)).sendMessage(eq("deleteEnrollment"), any());
     }
 }

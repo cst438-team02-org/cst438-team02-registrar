@@ -117,7 +117,7 @@ public class StudentScheduleController {
         // check that the enrollment entity exists in the database
         Enrollment e = enrollmentRepository.findById(enrollmentId).orElse(null);
         if (e == null) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "enrollment not found");
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "student not enrolled in course");
         }
 
         // check that the section entity exists in the database
@@ -134,7 +134,6 @@ public class StudentScheduleController {
 
         // check that enrollment belongs to the logged in student
         User u = userRepository.findByEmail(principal.getName());
-
         e = enrollmentRepository.findEnrollmentBySectionNoAndStudentId(s.getSectionNo(), u.getId());
         if (e == null) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "student not enrolled in course");

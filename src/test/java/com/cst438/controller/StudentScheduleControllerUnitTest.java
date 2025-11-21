@@ -126,17 +126,57 @@ public class StudentScheduleControllerUnitTest {
 
     @Test
     public void deleteStudentScheduleNotEnrolled() throws Exception {
+        /* Student Login */
+        String studentEmail = "sam@csumb.edu";
+        String password = "sam2025";
 
+        String jwt = loginUser(studentEmail, password);
+
+        int enrollmentId = 0; // non-existent enrollmentId
+
+        /* Attempt to Re-add Course to Student's Schedule */
+        // add a course to the student's schedule in POST request with sectionNo as path var
+        client.delete().uri("/enrollments/"+enrollmentId)
+                .headers(headers -> headers.setBearerAuth(jwt))
+                .accept(MediaType.APPLICATION_JSON)
+                .exchange()
+                .expectStatus().isBadRequest();
     }
 
     @Test
     public void createStudentScheduleInvalidDate() throws Exception {
 
-    }
+        /* Student Login */
+        String studentEmail = "sam@csumb.edu";
+        String password = "sam2025";
 
-    @Test
-    public void createStudentScheduleInvalidTermOrSection() throws Exception {
+        String jwt = loginUser(studentEmail, password);
 
+        /* After Add Deadline */
+        int sectionNo = 2; // default section already in database that is past the add deadline
+
+        /* Add Course to Student's Schedule */
+        // add a course to the student's schedule in POST request with sectionNo as path var
+        client.post().uri("/enrollments/sections/"+sectionNo)
+                .headers(headers -> headers.setBearerAuth(jwt))
+                .accept(MediaType.APPLICATION_JSON)
+                .exchange()
+                .expectStatus().isBadRequest()
+                .expectBody()
+                .jsonPath("$.errors[?(@=='add deadline passed')]").exists();
+
+        /* Before Add Date */
+        sectionNo = 3; // default section already in database that is past the add deadline
+
+        /* Add Course to Student's Schedule */
+        // add a course to the student's schedule in POST request with sectionNo as path var
+        client.post().uri("/enrollments/sections/"+sectionNo)
+                .headers(headers -> headers.setBearerAuth(jwt))
+                .accept(MediaType.APPLICATION_JSON)
+                .exchange()
+                .expectStatus().isBadRequest()
+                .expectBody()
+                .jsonPath("$.errors[?(@=='course not accepting enrollments yet')]").exists();
     }
 
     private String loginUser(String email, String password) {

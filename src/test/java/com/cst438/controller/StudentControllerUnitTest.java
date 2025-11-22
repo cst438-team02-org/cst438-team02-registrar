@@ -104,7 +104,7 @@ public class StudentControllerUnitTest {
         assertEquals(c.getCourseId(), enrollments.get(0).courseId(), "courseId incorrect");
     }
 
-    // test listing student's currently enrolled course schedule with 1 course
+    // test listing student's currently enrolled course schedule with 2 courses
     @Test
     public void studentListEnrolledCourseMultiple() throws Exception {
 
@@ -192,6 +192,163 @@ public class StudentControllerUnitTest {
         int year = 2026;
         String semester = "Spring";
         EntityExchangeResult<List<EnrollmentDTO>> enrollmentsResult =  client.get().uri("/enrollments?year="+year+"&semester="+semester)
+                .headers(headers -> headers.setBearerAuth(jwt))
+                .accept(MediaType.APPLICATION_JSON)
+                .exchange()
+                .expectStatus().isOk()
+                .expectBodyList(EnrollmentDTO.class).returnResult();
+
+        List<EnrollmentDTO> enrollments = enrollmentsResult.getResponseBody();
+        assertEquals(0, enrollments.size(), "fail - size does not equal 0");
+    }
+
+    // test listing student's currently enrolled course schedule with 1 course
+    @Test
+    public void studentListTranscriptsSingle() throws Exception {
+
+        // reset databases used in this test
+        enrollmentRepository.deleteAll();
+        sectionRepository.deleteAll();
+        courseRepository.deleteAll();
+        termRepository.deleteAll();
+
+        /* Student Login */
+        String studentEmail = "sam@csumb.edu";
+        String password = "sam2025";
+
+        String jwt = loginUser(studentEmail, password);
+
+        /* Generate Term */
+        Term t = createTerm(1,
+                2026,
+                "Spring",
+                "2025-11-01",
+                "2026-04-30",
+                "2026-04-30",
+                "2026-01-15",
+                "2026-05-17");
+
+        /* Generate Course */
+        Course c = createCourse("cst311", "Security", 3);
+
+        /* Generate Section */
+        Section s = createSection(c,
+                t,
+                111,
+                "99",
+                "b101",
+                "W F 10-11",
+                "ted@csumb.edu");
+
+        /* Add Course to Student's Schedule */
+        EnrollmentDTO eDTO = addCourse(jwt, s.getSectionNo());
+
+        // check that the sendMessage from registrar to gradebook was called as expected
+        verify(gradebookService, times(1)).sendMessage(eq("addEnrollment"), any());
+
+        /* Get Student's Transcript */
+        EntityExchangeResult<List<EnrollmentDTO>> enrollmentsResult =  client.get().uri("/transcripts")
+                .headers(headers -> headers.setBearerAuth(jwt))
+                .accept(MediaType.APPLICATION_JSON)
+                .exchange()
+                .expectStatus().isOk()
+                .expectBodyList(EnrollmentDTO.class).returnResult();
+
+        List<EnrollmentDTO> enrollments = enrollmentsResult.getResponseBody();
+        assertNotNull(enrollments, "enrollment failed - null");
+        assertEquals(1, enrollments.size(), "enrollment failed - size does not equal 1");
+        assertEquals(s.getSectionNo(), enrollments.get(0).sectionNo(), "sectionNo incorrect");
+        assertEquals(c.getCourseId(), enrollments.get(0).courseId(), "courseId incorrect");
+    }
+
+    // test listing student's transcripts with 2 courses
+    @Test
+    public void studentListTranscriptsMultiple() throws Exception {
+
+        // reset databases used in this test
+        enrollmentRepository.deleteAll();
+        sectionRepository.deleteAll();
+        courseRepository.deleteAll();
+        termRepository.deleteAll();
+
+        /* Student Login */
+        String studentEmail = "sam@csumb.edu";
+        String password = "sam2025";
+
+        String jwt = loginUser(studentEmail, password);
+
+        /* Generate Term */
+        Term t = createTerm(1,
+                2026,
+                "Spring",
+                "2025-11-01",
+                "2026-04-30",
+                "2026-04-30",
+                "2026-01-15",
+                "2026-05-17");
+
+        /* Generate Course */
+        Course c1 = createCourse("cst311", "Security", 3);
+        Course c2 = createCourse("cst113", "Hacking", 3);
+
+        /* Generate Section */
+        Section s1 = createSection(c1,
+                t,
+                111,
+                "99",
+                "b101",
+                "W F 10-11",
+                "ted@csumb.edu");
+        Section s2 = createSection(c2,
+                t,
+                222,
+                "88",
+                "b102",
+                "M T 10-11",
+                "ted@csumb.edu");
+
+        /* Add Course to Student's Schedule */
+        EnrollmentDTO eDTO = addCourse(jwt, s1.getSectionNo());
+        addCourse(jwt, s2.getSectionNo());
+
+        // check that the sendMessage from registrar to gradebook was called as expected
+        verify(gradebookService, times(2)).sendMessage(eq("addEnrollment"), any());
+
+        /* Get Student's Transcripts */
+        int year = eDTO.year();
+        String semester = eDTO.semester();
+        EntityExchangeResult<List<EnrollmentDTO>> enrollmentsResult =  client.get().uri("/transcripts")
+                .headers(headers -> headers.setBearerAuth(jwt))
+                .accept(MediaType.APPLICATION_JSON)
+                .exchange()
+                .expectStatus().isOk()
+                .expectBodyList(EnrollmentDTO.class).returnResult();
+
+        List<EnrollmentDTO> enrollments = enrollmentsResult.getResponseBody();
+        assertNotNull(enrollments, "enrollment failed - null");
+        assertEquals(2, enrollments.size(), "enrollment failed - size does not equal 2");
+    }
+
+    // test listing student's transcripts without any enrolled courses
+    @Test
+    public void studentListTranscriptsNone() throws Exception {
+
+        // reset databases used in this test
+        enrollmentRepository.deleteAll();
+        sectionRepository.deleteAll();
+        courseRepository.deleteAll();
+        termRepository.deleteAll();
+
+        /* Student Login */
+        String studentEmail = "sam@csumb.edu";
+        String password = "sam2025";
+
+        String jwt = loginUser(studentEmail, password);
+
+        /* Get Student's Transcripts */
+        int year = 2026;
+        String semester = "Spring";
+        EntityExchangeResult<List<EnrollmentDTO>> enrollmentsResult =  client.get().uri("/transcripts")
                 .headers(headers -> headers.setBearerAuth(jwt))
                 .accept(MediaType.APPLICATION_JSON)
                 .exchange()

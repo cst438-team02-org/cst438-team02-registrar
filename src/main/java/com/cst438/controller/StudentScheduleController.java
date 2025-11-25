@@ -122,15 +122,9 @@ public class StudentScheduleController {
 
         // check that the section entity exists in the database
         Section s = e.getSection();
-        if (s == null) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "invalid section");
-        }
 
         // check that the term entity exists in the database
         Term t = s.getTerm();
-        if (t == null) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "invalid term");
-        }
 
         // check that enrollment belongs to the logged in student
         User u = userRepository.findByEmail(principal.getName());

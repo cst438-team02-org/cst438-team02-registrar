@@ -171,7 +171,7 @@ public class SectionControllerUnitTest {
                 .expectStatus().isBadRequest()
                 .expectBody()
                 // check the list of validation messages
-                .jsonPath("$.errors[?(@.defaultMessage=='invalid char in building')]").exists();
+                 .jsonPath("$.errors[?(@=='invalid char in building')]").exists();
     }
 
     @Test
@@ -215,6 +215,6 @@ public class SectionControllerUnitTest {
                 .expectStatus().isBadRequest()
                 .expectBody()
                 // extract the error message
-                .jsonPath("$[?(@.message=='invalid instructor')]").exists();
+                .jsonPath("$.errors[?(@=='invalid instructor email')]").exists();
     }
 }

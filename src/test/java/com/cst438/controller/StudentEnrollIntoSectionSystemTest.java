@@ -1,6 +1,5 @@
-package com.cst438;
+package com.cst438.controller;
 
-import static org.openqa.selenium.support.ui.ExpectedConditions.*;
 import static org.junit.jupiter.api.Assertions.*;
 
 import java.time.Duration;
@@ -8,70 +7,96 @@ import java.util.List;
 
 import org.junit.jupiter.api.*;
 import org.openqa.selenium.*;
-import org.openqa.selenium.chrome.ChromeDriver;
+import org.openqa.selenium.chrome.*;
 import org.openqa.selenium.support.ui.*;
 
 public class StudentEnrollIntoSectionSystemTest {
 
+    
+    // CONFIGURATION
+    
     public static final String CHROME_DRIVER_FILE_LOCATION = "chromedriver";
+
     public static final String URL = "http://localhost:3000/";
-    public static final String TEST_USER_EMAIL = "sama@csumb.edu";
-    public static final String TEST_USER_PASSWORD = "test123"; // matches data.sql
+    public static final String STUDENT_EMAIL = "sama@csumb.edu";
+    public static final String STUDENT_PASSWORD = "sama2025";  
 
     private WebDriver driver;
     private WebDriverWait wait;
 
+    
+    // SETUP DRIVER
+    
     @BeforeEach
-    public void setUp() throws Exception {
+    public void setUpDriver() throws Exception {
         System.setProperty("webdriver.chrome.driver", CHROME_DRIVER_FILE_LOCATION);
-        driver = new ChromeDriver();
-        wait = new WebDriverWait(driver, Duration.ofSeconds(5));
+
+        ChromeOptions ops = new ChromeOptions();
+        ops.addArguments("--remote-allow-origins=*");
+
+        driver = new ChromeDriver(ops);
+        driver.manage().timeouts().implicitlyWait(Duration.ofSeconds(2));
+        wait = new WebDriverWait(driver, Duration.ofSeconds(4));
+
         driver.get(URL);
         driver.manage().window().maximize();
     }
 
+
+    // CLEANUP
+    
     @AfterEach
-    public void tearDown() {
+    public void quit() {
         driver.quit();
     }
 
+    
+    // MAIN SYSTEM TEST: Student enrolls into CST599 (Spring 2026)
+    
     @Test
-    public void studentEnrollSystemTest() throws Exception {
+    public void testStudentEnrollIntoSection() throws Exception {
 
+    
         
-        // LOGIN AS STUDENT (sama)
+        // 1. LOGIN AS STUDENT (SAMA)
         
-        wait.until(visibilityOfElementLocated(By.id("email")));
-        driver.findElement(By.id("email")).sendKeys(TEST_USER_EMAIL);
-        driver.findElement(By.id("password")).sendKeys(TEST_USER_PASSWORD);
+        wait.until(ExpectedConditions.visibilityOfElementLocated(By.id("email")));
+        driver.findElement(By.id("email")).sendKeys(STUDENT_EMAIL);
+        driver.findElement(By.id("password")).sendKeys(STUDENT_PASSWORD);
         driver.findElement(By.id("loginButton")).click();
 
-        wait.until(visibilityOfElementLocated(
-            By.xpath("//h3[contains(text(),'Student Home')]")
+        wait.until(ExpectedConditions.visibilityOfElementLocated(
+            By.xpath("//h1[contains(text(),'Student Home')]")
         ));
 
+      
+        // 2. VIEW SCHEDULE (Spring 2026)
         
-        // VIEW SCHEDULE FOR FALL 2025
-    
         driver.findElement(By.id("scheduleLink")).click();
-        wait.until(visibilityOfElementLocated(By.id("year")));
-        driver.findElement(By.id("year")).sendKeys("2025");
-        driver.findElement(By.id("semester")).sendKeys("Fall");
-        driver.findElement(By.id("searchButton")).click();
 
-        wait.until(visibilityOfElementLocated(By.tagName("table")));
+        wait.until(ExpectedConditions.visibilityOfElementLocated(By.id("year")));
+        driver.findElement(By.id("year")).clear();
+        driver.findElement(By.id("year")).sendKeys("2026");
+
+        driver.findElement(By.id("semester")).sendKeys("Spring");
+
+        driver.findElement(By.id("selectTermButton")).click();
+
+        // Wait for schedule table
+        Thread.sleep(1000);
 
         
-        // DROP CST599 IF ENROLLED
+        // 3. DROP EXISTING ENROLLMENT FOR CST599 (if exists)
         
-        List<WebElement> dropButtons =
-            driver.findElements(By.xpath("//button[contains(text(),'Drop')]"));
+        List<WebElement> dropButtons = driver.findElements(
+            By.xpath("//tr[td[text()='CST599']]//button[contains(text(),'Drop')]")
+        );
 
         if (!dropButtons.isEmpty()) {
             dropButtons.get(0).click();
 
-            // Confirm React ConfirmAlert
-            wait.until(visibilityOfElementLocated(
+            // Handle Confirm Alert
+            wait.until(ExpectedConditions.visibilityOfElementLocated(
                 By.xpath("//div[@class='react-confirm-alert-button-group']/button[@label='Yes']")
             ));
             WebElement yesButton = driver.findElement(
@@ -79,86 +104,105 @@ public class StudentEnrollIntoSectionSystemTest {
             );
             yesButton.click();
 
-            Thread.sleep(1000);
+            Thread.sleep(1200); // allow UI refresh
         }
 
         
-        // NAVIGATE TO ENROLL PAGE
         
-        driver.findElement(By.id("enrollLink")).click();
-        wait.until(visibilityOfElementLocated(By.tagName("table")));
+        // 4. NAVIGATE TO ENROLL PAGE
+   
+        driver.findElement(By.id("addCourseLink")).click();
 
-        
-        // SELECT CST599 AND ENROLL
-        
-        WebElement enrollButton = driver.findElement(
-            By.xpath("//tr[td[contains(text(),'CST599')]]//button[contains(text(),'Enroll')]")
+        wait.until(ExpectedConditions.visibilityOfElementLocated(
+            By.xpath("//h3[contains(text(),'Course Enrollment')]")
+        ));
+
+       
+        // 5. SELECT CST599 AND ENROLL
+       
+        WebElement enrollBtn = wait.until(
+            ExpectedConditions.visibilityOfElementLocated(
+                By.xpath("//tr[td[text()='CST599']]//button[contains(text(),'Enroll')]")
+            )
         );
-        enrollButton.click();
 
-        wait.until(visibilityOfElementLocated(
+        enrollBtn.click();
+
+        // Confirm Alert
+        wait.until(ExpectedConditions.visibilityOfElementLocated(
             By.xpath("//div[@class='react-confirm-alert-button-group']/button[@label='Yes']")
         ));
-        WebElement yesButton2 = driver.findElement(
+        WebElement yes = driver.findElement(
             By.xpath("//div[@class='react-confirm-alert-button-group']/button[@label='Yes']")
         );
-        yesButton2.click();
+        yes.click();
 
-        Thread.sleep(1000);
+        Thread.sleep(1500);
 
-        
-        // VIEW TRANSCRIPT → VERIFY CST599 IS LISTED WITH NO GRADE
+      
+        // 6. VERIFY TRANSCRIPT → CST599 EXISTS WITH BLANK GRADE
         
         driver.findElement(By.id("transcriptLink")).click();
-        wait.until(visibilityOfElementLocated(By.tagName("table")));
 
-        WebElement courseRow = driver.findElement(
-            By.xpath("//tr[td[contains(text(),'CST599')]]")
+        wait.until(ExpectedConditions.visibilityOfElementLocated(By.tagName("table")));
+
+        WebElement row = driver.findElement(
+            By.xpath("//tr[td[text()='CST599']]")
         );
-        WebElement gradeCell = courseRow.findElement(By.xpath("./td[last()]"));
 
-        assertTrue(gradeCell.getText().isBlank(), "Grade should be blank after enrollment.");
+        WebElement gradeCell = row.findElement(By.xpath("./td[last()]"));
+        assertTrue(gradeCell.getText().isBlank(), "Expected grade to be blank after enrolling.");
 
-    
-        // LOGIN AS INSTRUCTOR (ted)
-        
-        driver.findElement(By.id("logoutButton")).click();
+     
+        // 7. LOGOUT STUDENT
+      
+        driver.findElement(By.id("logoutLink")).click();
+        wait.until(ExpectedConditions.visibilityOfElementLocated(By.id("email")));
 
-        wait.until(visibilityOfElementLocated(By.id("email")));
+       
+        // 8. LOGIN AS INSTRUCTOR (Ted)
+       
         driver.findElement(By.id("email")).sendKeys("ted@csumb.edu");
         driver.findElement(By.id("password")).sendKeys("ted2025");
         driver.findElement(By.id("loginButton")).click();
 
-        wait.until(visibilityOfElementLocated(
-            By.xpath("//h3[contains(text(),'Instructor Home')]")
+        wait.until(ExpectedConditions.visibilityOfElementLocated(
+            By.xpath("//h1[contains(text(),'Instructor Home')]")
         ));
 
-        
-        // VIEW SECTIONS FOR FALL 2025
-        
-        driver.findElement(By.id("sectionSearchLink")).click();
-        wait.until(visibilityOfElementLocated(By.id("year")));
-        driver.findElement(By.id("year")).sendKeys("2025");
-        driver.findElement(By.id("semester")).sendKeys("Fall");
-        driver.findElement(By.id("searchButton")).click();
+      
+        // 9. ENTER TERM (Spring 2026)
+       
+        driver.findElement(By.id("year")).clear();
+        driver.findElement(By.id("year")).sendKeys("2026");
 
-        wait.until(visibilityOfElementLocated(
-            By.xpath("//tr[td[contains(text(),'CST599')]]")
-        ));
+        driver.findElement(By.id("semester")).sendKeys("Spring");
 
+        driver.findElement(By.id("selectTermButton")).click();
+
+       
+        // 10. FIND CST599 IN SECTIONS LIST
         
-        // VIEW ENROLLMENTS + VERIFY SAMA APPEARS ONLY ONCE
-        
-        driver.findElement(
-            By.xpath("//tr[td[contains(text(),'CST599')]]//button[contains(text(),'Enrollments')]")
-        ).click();
-
-        wait.until(visibilityOfElementLocated(By.tagName("table")));
-
-        List<WebElement> samaRows = driver.findElements(
-            By.xpath("//tr[td[contains(text(),'sama')]]")
+        WebElement cst599row = wait.until(
+            ExpectedConditions.visibilityOfElementLocated(
+                By.xpath("//tr[td[text()='CST599']]")
+            )
         );
 
-        assertEquals(1, samaRows.size(), "sama should appear exactly once in the roster.");
+        
+        // 11. OPEN ENROLLMENTS VIEW
+      
+        cst599row.findElement(By.id("enrollmentsLink")).click();
+
+        Thread.sleep(1000);
+
+       
+        // 12. VERIFY SAMA APPEARS ONLY ONCE IN THE ROSTER
+       
+        List<WebElement> occurrences = driver.findElements(
+            By.xpath("//tr[td[text()='sama@csumb.edu']]")
+        );
+
+        assertEquals(1, occurrences.size(), "SAMA should appear exactly once in the roster.");
     }
 }

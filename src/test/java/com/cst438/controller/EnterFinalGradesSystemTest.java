@@ -14,7 +14,7 @@ import org.openqa.selenium.support.ui.WebDriverWait;
 
 import java.time.Duration;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 public class EnterFinalGradesSystemTest {
     static final String CHROME_DRIVER_FILE_LOCATION = "C:/Home/School Stuff/CST 438/Labs/Lab4/chromedriver-win64/chromedriver.exe";

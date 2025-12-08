@@ -21,7 +21,7 @@ public class InstructorCreatesAssignmentSystemTest {
     static final String CHROME_DRIVER_FILE_LOCATION = "/Users/matthewross/Downloads/chromedriver-mac-x64M/chromedriver";
     static final String URL = "http://localhost:5173";   // react dev server
 
-    static final int DELAY = 2000;
+    static final int DELAY = 10000;
     WebDriver driver;
 
     Wait<WebDriver> wait;
@@ -62,14 +62,49 @@ public class InstructorCreatesAssignmentSystemTest {
         driver.findElement(By.id("semester")).sendKeys("Spring");
         driver.findElement(By.id("selectTermButton")).click();
 
-        WebElement row = driver.findElement(By.xpath("//tr[./td[text()='cst489']]"));
+        WebElement row = driver.findElement(By.xpath("//tr[./td[text()='cst599']]"));
         assertNotNull(row);
         row.findElement(By.id("assignmentsLink")).click();
         driver.findElement(By.id("addAssignmentButton")).click();
+        String assignment_title = "assignment"+random.nextInt(1,1000000);
+        String assignment_dueDate = "02152026";
+        String xpath="//tr[./td[text()='"+assignment_title+"']]";
         Thread.sleep(DELAY);
-        driver.findElement(By.id("title")).sendKeys("Assignments");
-        driver.findElement(By.id("duedate")).sendKeys("02-15-2026");
-        driver.findElement(By.id("save")).click();
-        driver.findElement(By.id("close")).click();
+        driver.findElement(By.id("titleAddAssignment")).sendKeys(assignment_title);
+        driver.findElement(By.id("dueDateAddAssignment")).sendKeys(assignment_dueDate);
+        driver.findElement(By.id("saveAddAssignment")).click();
+        driver.findElement(By.id("closeAddAssignment")).click();
+        WebElement NewAssignment= driver.findElement(By.xpath(xpath));
+        assertNotNull(NewAssignment);
+        NewAssignment.findElement(By.id("gradeButton")).click();
+        Thread.sleep(DELAY);
+        WebElement row2 = driver.findElement(By.xpath("//tr[./td[text()='sama']]"));
+        WebElement row3 = driver.findElement(By.xpath("//tr[./td[text()='samb']]"));
+        WebElement row4= driver.findElement(By.xpath("//tr[./td[text()='samc']]"));
+        String[] grades={"60","80","98"};
+        WebElement[] rows= {row2,row3,row4};
+        int i =0;
+        for(WebElement r: rows){
+            r.findElement(By.id("score")).sendKeys(grades[i]);
+            i++;
+        }
+        Thread.sleep(DELAY);
+        driver.findElement(By.id("saveGrades")).click();
+        driver.findElement(By.id("closeGrades")).click();
+        NewAssignment.findElement(By.id("gradeButton")).click();
+        row2 = driver.findElement(By.xpath("//tr[./td[text()='sama']]"));
+        row3 = driver.findElement(By.xpath("//tr[./td[text()='samb']]"));
+        row4= driver.findElement(By.xpath("//tr[./td[text()='samc']]"));
+        for (WebElement r : rows) {
+            WebElement input = r.findElement(By.xpath(".//input[@id='score']"));
+
+            String value = input.getAttribute("value");  // <-- this is how you get the value
+
+            assertEquals(grades[i], value);
+            i++;
+        }
+        driver.findElement(By.id("closeButton")).click();
+
+
     }
 }

@@ -71,8 +71,9 @@ public class InstructorCreatesAssignmentSystemTest {
         String xpath="//tr[./td[text()='"+assignment_title+"']]";
         Thread.sleep(DELAY);
         driver.findElement(By.id("titleAddAssignment")).sendKeys(assignment_title);
-        driver.findElement(By.id("dueDateAddAssignment")).sendKeys(assignment_dueDate);
+        driver.findElement(By.id("duedateAddAssignment")).sendKeys(assignment_dueDate);
         driver.findElement(By.id("saveAddAssignment")).click();
+        Thread.sleep(DELAY);
         driver.findElement(By.id("closeAddAssignment")).click();
         WebElement NewAssignment= driver.findElement(By.xpath(xpath));
         assertNotNull(NewAssignment);
@@ -81,7 +82,7 @@ public class InstructorCreatesAssignmentSystemTest {
         WebElement row2 = driver.findElement(By.xpath("//tr[./td[text()='sama']]"));
         WebElement row3 = driver.findElement(By.xpath("//tr[./td[text()='samb']]"));
         WebElement row4= driver.findElement(By.xpath("//tr[./td[text()='samc']]"));
-        String[] grades={"60","80","98"};
+        String[] grades={"60","88","98"};
         WebElement[] rows= {row2,row3,row4};
         int i =0;
         for(WebElement r: rows){
@@ -89,12 +90,13 @@ public class InstructorCreatesAssignmentSystemTest {
             i++;
         }
         Thread.sleep(DELAY);
-        driver.findElement(By.id("saveGrades")).click();
-        driver.findElement(By.id("closeGrades")).click();
+        driver.findElement(By.id("save")).click();
+        driver.findElement(By.id("close")).click();
         NewAssignment.findElement(By.id("gradeButton")).click();
         row2 = driver.findElement(By.xpath("//tr[./td[text()='sama']]"));
         row3 = driver.findElement(By.xpath("//tr[./td[text()='samb']]"));
         row4= driver.findElement(By.xpath("//tr[./td[text()='samc']]"));
+        rows= new WebElement[]{row2, row3, row4};
         for (WebElement r : rows) {
             WebElement input = r.findElement(By.xpath(".//input[@id='score']"));
 

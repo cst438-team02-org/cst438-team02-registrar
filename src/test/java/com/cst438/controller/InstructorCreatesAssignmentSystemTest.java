@@ -21,7 +21,7 @@ public class InstructorCreatesAssignmentSystemTest {
     static final String CHROME_DRIVER_FILE_LOCATION = "/Users/matthewross/Downloads/chromedriver-mac-x64M/chromedriver";
     static final String URL = "http://localhost:5173";   // react dev server
 
-    static final int DELAY = 10000;
+    static final int DELAY = 2000;
     WebDriver driver;
 
     Wait<WebDriver> wait;
@@ -86,26 +86,34 @@ public class InstructorCreatesAssignmentSystemTest {
         WebElement[] rows= {row2,row3,row4};
         int i =0;
         for(WebElement r: rows){
-            r.findElement(By.id("score")).sendKeys(grades[i]);
+            r.findElement(By.id("score"+assignment_title)).sendKeys(grades[i]);
             i++;
         }
         Thread.sleep(DELAY);
-        driver.findElement(By.id("save")).click();
-        driver.findElement(By.id("close")).click();
+        driver.findElement(By.id("saveGrades"+assignment_title)).click();
+        driver.findElement(By.id("closeGrades"+assignment_title)).click();
         NewAssignment.findElement(By.id("gradeButton")).click();
         row2 = driver.findElement(By.xpath("//tr[./td[text()='sama']]"));
         row3 = driver.findElement(By.xpath("//tr[./td[text()='samb']]"));
         row4= driver.findElement(By.xpath("//tr[./td[text()='samc']]"));
         rows= new WebElement[]{row2, row3, row4};
+        grades=new String[]{String.valueOf(random.nextInt(100)),String.valueOf(random.nextInt(100)),String.valueOf(random.nextInt(100))};
+        i=0;
+        for(WebElement r: rows){
+            r.findElement(By.id("score"+assignment_title)).clear();
+            r.findElement(By.id("score"+assignment_title)).sendKeys(grades[i]);
+            i++;
+        }
+        i=0;
         for (WebElement r : rows) {
-            WebElement input = r.findElement(By.xpath(".//input[@id='score']"));
+            WebElement input = r.findElement(By.id("score"+assignment_title));
 
-            String value = input.getAttribute("value");  // <-- this is how you get the value
+            String value = input.getAttribute("value");
 
             assertEquals(grades[i], value);
             i++;
         }
-        driver.findElement(By.id("closeButton")).click();
+        driver.findElement(By.id("closeGrades"+assignment_title)).click();
 
 
     }

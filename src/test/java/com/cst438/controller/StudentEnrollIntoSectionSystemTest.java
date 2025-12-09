@@ -91,7 +91,7 @@ public class StudentEnrollIntoSectionSystemTest {
 
         // Find any table row that contains CST599
         List<WebElement> existingRows = driver.findElements(
-            By.xpath("//tr[td[text()='CST599']]")
+            By.xpath("//tr[td[text()='cst599']]")
         );
 
         if (!existingRows.isEmpty()) {
@@ -129,7 +129,7 @@ public class StudentEnrollIntoSectionSystemTest {
 
         WebElement cst599Row = wait.until(
             ExpectedConditions.visibilityOfElementLocated(
-                By.xpath("//tr[td[text()='CST599']]")
+                By.xpath("//tr[td[text()='cst599']]")
             )
         );
 
@@ -158,7 +158,7 @@ public class StudentEnrollIntoSectionSystemTest {
 
         WebElement transcriptRow = wait.until(
             ExpectedConditions.visibilityOfElementLocated(
-                By.xpath("//tr[td[text()='CST599']]")
+                By.xpath("//tr[td[text()='cst599']]")
             )
         );
 
@@ -193,7 +193,7 @@ public class StudentEnrollIntoSectionSystemTest {
 
         WebElement rowAfter = wait.until(
             ExpectedConditions.visibilityOfElementLocated(
-                By.xpath("//tr[td[text()='CST599']]")
+                By.xpath("//tr[td[text()='cst599']]")
             )
         );
 

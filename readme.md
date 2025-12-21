@@ -23,11 +23,10 @@ This is one out of two services in the college enrollment management system. The
 The Registrar and Gradebook services use RabbitMQ as the message broker to communicate with each other.
 To setup and run RabbitMQ using a Docker container, perform the following steps.<br>
 * **Pull the image**<br>
-```docker pull rabbitmq:3-management```
+  ```docker pull rabbitmq:3-management```
 * **Start the container on port 5672. Port 15672 is the management port**<br>
-```docker run -d --name rabbitmq -p 5672:5672 -p 15672:15672 rabbitmq:3-management```
+  ```docker run -d --name rabbitmq -p 5672:5672 -p 15672:15672 rabbitmq:3-management```
 
-2. **Start the Registrar Service**
-
+2. **Start the Registrar Service**<br>
 The service will be available at
 > http://localhost:8080
